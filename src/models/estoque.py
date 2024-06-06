@@ -181,12 +181,10 @@ class CtrlEstoque():
         msg = ''
         codigoParametro = simpledialog.askinteger('Consulta de Mercadoria', 'Insira o código da mercadoria: ')
         aux = False
-        status = 'naoEncontrado'
         
         for prod in self.listaProdutos:
             if codigoParametro == int(prod.codigoNumerico):
                 aux = True
-                status = 'encontrado'
                 msg += 'Estoque: ' + str(prod.quant) + '\n'
                 msg += 'Descrição: ' + prod.descricao + '\n'
                 msg += 'Preço de compra: ' + str(prod.precoCompra) + '\n'
@@ -196,7 +194,6 @@ class CtrlEstoque():
             messagebox.showinfo('Erro', 'Não há mercadoria com esse código')
             return
         
-        # if status == 'encontrado':
         messagebox.showinfo('Mercadoria encontrada', msg)
         
     

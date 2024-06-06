@@ -5,7 +5,7 @@ import pickle
 import os.path
 
 class Mercadoria():
-    def __init__(self,codigoNumerico,descricao,precoCompra,valorVenda, quant):
+    def __init__(self, codigoNumerico, descricao, precoCompra, valorVenda, quant):
         self.__codigoNumerico = codigoNumerico
         self.__descricao = descricao
         self.__precoCompra = precoCompra
@@ -33,7 +33,7 @@ class Mercadoria():
         return self.__quant
     
     @quant.setter
-    def quant(self, quant):
+    def quantidad(self, quant):
         self.__quant = quant
 
 class LimiteCadastroMercadoria(tk.Toplevel):
@@ -44,18 +44,22 @@ class LimiteCadastroMercadoria(tk.Toplevel):
         self.title("Cadastrar Mercadoria")
         self.controle = controle
 
-        #frames dos campos do Limite para inserir e empacotar os frames
+        # Frames das informações
         self.frameCodigo = tk.Frame(self)
         self.frameDescricao = tk.Frame(self)
         self.framePrecoCompra = tk.Frame(self)
         self.frameValorVenda = tk.Frame(self)
         self.frameQuant = tk.Frame(self)
+        self.frameEspacamento = tk.Frame(self)
         self.frameButton = tk.Frame(self)
+        
+        # Pack dos frames
         self.frameCodigo.pack()
         self.frameDescricao.pack()
         self.framePrecoCompra.pack()
         self.frameValorVenda.pack()
         self.frameQuant.pack()
+        self.frameEspacamento.pack()
         self.frameButton.pack()
       
         self.labelCodigo = tk.Label(self.frameCodigo,text="Código: ")
@@ -87,6 +91,9 @@ class LimiteCadastroMercadoria(tk.Toplevel):
 
         self.inputQuant = tk.Entry(self.frameQuant, width=20)
         self.inputQuant.pack(side='left')
+        
+        self.labelEspacamento = tk.Label(self.frameEspacamento)
+        self.labelEspacamento.pack(side='left')
       
         self.buttonSubmit = tk.Button(self.frameButton ,text="Enter")      
         self.buttonSubmit.pack(side="left")
@@ -114,43 +121,46 @@ class CtrlEstoque():
             with open('estoque.pickle', 'rb') as f:
                 self.listaProdutos = pickle.load(f)
                 
-    #método de criação do limite de cadastro de uma mercadoria
+    # Método de criação do limite (janela) para cadastrar uma mercadoria
     def cadastraMercadoria(self):
         self.limiteCadastro = LimiteCadastroMercadoria(self)
 
-    #callback de cadastro de produto com verificação de estoque 
+    # Callback de cadastro de produto (botão cadastrar)
     def enterHandlerCadastro(self, event):
+        # Coletando informações dos inputs
         codigo = int(self.limiteCadastro.inputCodigo.get())
         descricao = self.limiteCadastro.inputDescricao.get()
         precoCompra = int(self.limiteCadastro.inputPrecoCompra.get())
         valorVenda = int(self.limiteCadastro.inputValorVenda.get())
         quant = int(self.limiteCadastro.inputQuant.get())
-        for i in self.listaProdutos:
-            if i.codigoNumerico == codigo:
-                if i.descricao == descricao:
-                    if i.precoCompra == precoCompra:
-                        if i.valorVenda == valorVenda:
-                            i.quant += int(quant)
-                            print(i.quant)
+        
+        # Verificação no estoque
+        for produto in self.listaProdutos:
+            if produto.codigoNumerico == codigo:
+                if produto.descricao == descricao:
+                    if produto.precoCompra == precoCompra:
+                        if produto.valorVenda == valorVenda:
+                            # Se todas informações forem iguais a de um produto já cadastrado, atualiza a quantidade em estoque
+                            produto.quant += int(quant)
+                            print(produto.quant)
                             self.limiteCadastro.mostraJanela('Produto já cadastrado', 'Estoque atualizado')
                             self.clearHandlerCadastro(event)
-                        else:
-                            self.limiteCadastro.mostraJanela('Erro', 'Já existe outro produto com esse código')
-                            self.clearHandlerCadastro(event)
-                    else:
-                        self.limiteCadastro.mostraJanela('Erro', 'Já existe outro produto com esse código')
-                        self.clearHandlerCadastro(event)
                 else:
-                    self.limiteCadastro.mostraJanela('Erro', 'Já existe outro produto com esse código')
+                    # Descrição da mercadoria igual a de alguma outra já cadastrada
+                    self.limiteCadastro.mostraJanela('Erro', 'Já existe outro produto com essa descrição')
                     self.clearHandlerCadastro(event)
             else:
-                break
-            return
-        objMercadoria = Mercadoria(codigo, descricao, precoCompra, valorVenda, quant)
-        self.listaProdutos.append(objMercadoria)
+                # Código da mercadoria igual a de alguma outra já cadastrada
+                self.limiteCadastro.mostraJanela('Erro', 'Já existe outro produto com esse código')
+                self.clearHandlerCadastro(event)
+                
+        # Instânciando uma mercadoria
+        novaMercadoria = Mercadoria(codigo, descricao, precoCompra, valorVenda, quant)
+        self.listaProdutos.append(novaMercadoria)
         self.limiteCadastro.mostraJanela("Sucesso", "Produto cadastrado!")
         self.clearHandlerCadastro(event)
 
+    # Método para limpeza dos inputs preenchidos
     def clearHandlerCadastro(self, event):
         self.limiteCadastro.inputCodigo.delete(0, len(self.limiteCadastro.inputCodigo.get()))
         self.limiteCadastro.inputDescricao.delete(0, len(self.limiteCadastro.inputDescricao.get()))
@@ -158,37 +168,48 @@ class CtrlEstoque():
         self.limiteCadastro.inputValorVenda.delete(0, len(self.limiteCadastro.inputValorVenda.get()))
         self.limiteCadastro.inputQuant.delete(0, len(self.limiteCadastro.inputQuant.get()))
 
-    #callback para fechar a janela e persistir informações no sistema
+    # Callback para fechar a janela e persistir informações no sistema (botão concluído)
     def closeHandlerCadastro(self, event):
         if len(self.listaProdutos) != 0:
+            # Persistindo dados
             with open('estoque.pickle', 'wb') as f:
                 pickle.dump(self.listaProdutos, f)
         self.limiteCadastro.destroy()
 
-    #callback de consulta de produtos
+    # Callback para consultar unma mercadoria (submenu: consultar mercadoria)
     def consultarMercadoria(self):
         msg = ''
-        codParam = simpledialog.askinteger('Consulta de Mercadoria', 'Insira o código da mercadoria: ')
+        codigoParametro = simpledialog.askinteger('Consulta de Mercadoria', 'Insira o código da mercadoria: ')
         aux = False
+        status = 'naoEncontrado'
+        
         for prod in self.listaProdutos:
-            if codParam == int(prod.codigoNumerico):
+            if codigoParametro == int(prod.codigoNumerico):
                 aux = True
+                status = 'encontrado'
                 msg += 'Estoque: ' + str(prod.quant) + '\n'
                 msg += 'Descrição: ' + prod.descricao + '\n'
+                msg += 'Preço de compra: ' + str(prod.precoCompra) + '\n'
                 msg += 'Preço de venda: ' + str(prod.valorVenda) + '\n'
+        
         if not aux:
             messagebox.showinfo('Erro', 'Não há mercadoria com esse código')
+            return
+        
+        # if status == 'encontrado':
         messagebox.showinfo('Mercadoria encontrada', msg)
         
-    #Métodos de instanciação para controladores externos
-    def getListaProdutos(self):
-        return self.listaProdutos
-    
-    def criaMercadoria(self, codigo, descricao, precoCompra, valorVenda, quant):
-        prodRet = None
-        prodRet = Mercadoria(codigo, descricao, precoCompra, valorVenda, quant)
-        return prodRet
     
     def atualizaEstoque(self, listaProdutos):
             with open('estoque.pickle', 'wb') as f:
                 pickle.dump(listaProdutos, f)
+    
+    # Método para instancias uma mercadoria
+    def criaMercadoria(self, codigo, descricao, precoCompra, valorVenda, quant):
+        prodRet = None
+        prodRet = Mercadoria(codigo, descricao, precoCompra, valorVenda, quant)
+        return prodRet
+
+    # Método de instanciação para controladores externos
+    def getListaProdutos(self):
+        return self.listaProdutos
